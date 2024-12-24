@@ -53,3 +53,34 @@ Concatinates multiple strs.
 `str_print(str string)`
 
 Prints the content of a string in quotes on a new line.
+
+```c
+int str_find_str(str string, str query);
+```
+```c
+bool str_starts_with(str base, str start);
+```
+```c
+bool str_ends_with(str base, str end);
+```
+```c
+bool str_equals(str a, str b);
+```
+```c
+str str_from(str string, size_t from);
+```
+```c
+str str_peek(str string, size_t from, size_t to);
+```
+```c
+size_t str_count(str string, char c);
+```
+```c
+size_t str_count_str(str string, str s);
+```
+```c
+void str_replace(str string, char a, char b);
+```
+```c
+StrAlloc str str_replace_str(str string, str a, str b, Allocator alloc);
+```
