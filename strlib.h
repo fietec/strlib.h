@@ -2,9 +2,9 @@
 #define _STRLIB_H
 
 #include <stdio.h>
-#include <assert.h>
 #include <stdarg.h>
 #include <stdbool.h>
+#include <assert.h>
 
 #ifndef ALLOCATOR
 #define ALLOCATOR
@@ -20,6 +20,13 @@ typedef void* (*Allocator) (size_t);
 #else
 #define str_info(msg, ...)
 #endif // STR_DEBUG
+
+#define str_error(msg, ...) (printf("[ERROR] %s:%s" msg "\n", __FILE__, __LINE__, ##__VA_ARGS__))
+
+#define str_assert(state, msg, ...) (assert((state) && msg))
+	
+#define str__assert_alloc(value) (str_assert((value) != NULL, "Out of memory!"))
+#define str__assert_allocator(alloc) (str_assert((alloc) != NULL, "Allocator may not be NULL!"))
 
 typedef struct{
 	char *value;
@@ -42,6 +49,8 @@ StrAlloc str str_sub(Allocator alloc, str string, size_t from, size_t to);
 StrAlloc str_pair str_split(Allocator alloc, str string, char del);
 StrAlloc str str__concat(Allocator alloc, int n, ...);
 StrAlloc str str_replace_str(str string, str a, str b, Allocator alloc);
+StrAlloc str str_remove(str string, char c, Allocator alloc);
+StrAlloc str str_remove_str(str string, str s, Allocator alloc);
 char *str_to_buffer(str s, char *buffer, size_t buffer_size);
 int str_find(str string, char c);
 int str_find_str(str string, str query);
@@ -91,8 +100,10 @@ void strlib_memset(char *s, char v, size_t n)
 
 char* strlib_dup(char *s, Allocator alloc)
 {
+	str__assert_allocator(alloc);
 	if (s == NULL || alloc == NULL) return NULL;
 	char *d = (char*) alloc(strlib_len(s)+1);
+	str__assert_alloc(d);
 	while (*s != '\0'){
 		*d++ = *s++;
 	}
@@ -101,13 +112,13 @@ char* strlib_dup(char *s, Allocator alloc)
 
 str str_new(char *s, Allocator alloc)
 {
-	if (alloc == NULL) return (str) {0};
+	str__assert_allocator(alloc);
 	return (str) {.value=strlib_dup(s, alloc), .len = strlib_len(s)};
 }
 
 str str_dup(str string, Allocator alloc)
 {
-	if (alloc == NULL) return (str) {0};
+	str__assert_allocator(alloc);
 	return (str) {.value=strlib_dup(string.value, alloc), .len=string.len};
 }
 
@@ -120,7 +131,8 @@ char* str_to_buffer(str s, char *buffer, size_t buffer_size)
 
 str str__concat(Allocator alloc, int n, ...)
 {
-	if (alloc == NULL || n == 0) return (str) {0};
+	str__assert_allocator(alloc);
+	if (n == 0) return (str) {0};
 	va_list args;
 	va_start(args, n);
 	str strings[n];
@@ -133,7 +145,7 @@ str str__concat(Allocator alloc, int n, ...)
 	va_end(args);
 	size_t buff_size = length+1;
 	char *value = alloc(buff_size);
-	assert(value != NULL && "Out of memory!");
+	str__assert_alloc(value);
 	char *w = value;
 	for (int i=0; i<n; ++i){
 		str temp = strings[i];
@@ -145,16 +157,19 @@ str str__concat(Allocator alloc, int n, ...)
 
 str str_sub(Allocator alloc, str string, size_t from, size_t to)
 {
-	if (alloc == NULL || to > string.len || from >= to) return (str) {0};
+	str__assert_allocator(alloc);
+	if (to > string.len || from >= to) return (str) {0};
 	size_t length = to-from;
 	char *value = alloc(length+1);
+	str__assert_alloc(value);
 	strlib_ncpy(string.value+from, length, value);
 	return (str) {.value=value, .len=length};
 }
 
 str_pair str_split(Allocator alloc, str string, char del)
 {
-	if (alloc == NULL || string.len == 0 || string.value == NULL) return (str_pair) {0};
+	str__assert_allocator(alloc);
+	if (string.len == 0 || string.value == NULL) return (str_pair) {0};
 	for (size_t i=0; i<string.len; ++i){
 		if (string.value[i] == del){
 			return (str_pair) {str_sub(alloc, string, 0, i), str_sub(alloc, string, i+1, string.len)};
@@ -255,22 +270,72 @@ void str_replace(str string, char a, char b)
 
 str str_replace_str(str string, str a, str b, Allocator alloc)
 {
+	str__assert_allocator(alloc);
 	size_t count = str_count_str(string, a);
 	if (count == 0) return str_dup(string, alloc);
 	size_t delta = b.len - a.len;
 	size_t length = string.len + delta*count;
 	char *value = alloc(length+1);
+	str__assert_alloc(value);
 	char *w = value;
 	char *r = string.value;
 	for (size_t i=0; i<count; ++i){
 		char *n = r + str_find_str(str(r), a);
-		if (n-r > 0)
-		w = strlib_ncpy(r, n-r, w);
+		if (n-r > 0){
+			w = strlib_ncpy(r, n-r, w);
+		}
 		w = strlib_ncpy(b.value, b.len, w);
 		r = n+a.len;
 	}
 	if (r-string.value < length){
 		strlib_ncpy(r, length-(r-string.value), w);
+	}
+	return (str) {.value=value, .len=length};
+}
+
+str str_remove(str string, char c, Allocator alloc)
+{
+	str__assert_allocator(alloc);
+	size_t count = str_count(string, c);
+	if (count == 0) return str_dup(string, alloc);
+	size_t length = string.len - count;
+	if (length <= 0) return (str) {0};
+	char *value = alloc(length+1);
+	str__assert_alloc(value);
+	char *r = string.value;
+	char *w = value;
+	for (size_t i=0; i<string.len; ++i){
+		char cs = *r++;
+		if (cs != c) *w++ = cs; 
+	}
+	*w = '\0';
+	return (str) {.value=value, .len=length};
+}
+
+str str_remove_str(str string, str s, Allocator alloc)
+{
+	str__assert_allocator(alloc);
+	size_t count = str_count_str(string, s);
+	if (count == 0) return str_dup(string, alloc);
+	size_t length = string.len - count*s.len;
+	if (length == 0) return (str) {0};
+	char *value = alloc(length+1);
+	str__assert_alloc(value);
+	char *r = string.value;
+	char *w = value;
+	for (size_t i=0; i<count; ++i){
+		int next = str_find_str(string, s);
+		str_assert(next != STR_NOT_FOUND, "string has changed!");
+		char *n = r + next;
+		str_info("Found next s at %d\n", n-string.value);
+		if (next > 0){
+			w = strlib_ncpy(r, next, w);
+		}
+		r = n + s.len;
+		str_info("continuing reading at %d\n", r-string.value);
+	}
+	if (w - value < length){
+		strlib_ncpy(r, length-(w-value), w);
 	}
 	return (str) {.value=value, .len=length};
 }

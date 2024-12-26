@@ -1,3 +1,4 @@
+#define STR_DEBUG
 #define STRLIB_IMPLEMENTATION
 #include "strlib.h"
 #include <stdio.h>
@@ -16,7 +17,9 @@ int main(void)
 	str b = str("World");
 	str c = str_concat(c_alloc, a, str(" "), b, str("!"));
 	str_print(c);
-	str d = str_replace_str(c, a, str("Hello"), c_alloc);
+	printf("%d\n", c.len);
+	str d = str_remove_str(c, str("llo"), c_alloc);
 	str_print(d);
+	printf("%d\n", d.len);
 	return 0;
 }

@@ -4,7 +4,7 @@ A simple string library for C.
 The library uses a `str` struct which contains the c-string and its length.
 Dynamic memory allocation is done via a custom `Allocator` function which is passed by the user.
 Therefore, custom memory management systems, such as arenas are supported. 
-The use of dynamic allocation is documented by the presence of an `Allocator` in a function's structure.
+The use of dynamic allocation is documented by the presence of `StrAlloc` in a function's declaration.
 
 ## Features
 
@@ -25,6 +25,8 @@ StrAlloc str str_sub(Allocator alloc, str string, size_t from, size_t to);
 StrAlloc str_pair str_split(Allocator alloc, str string, char del);
 StrAlloc str str_concat(Allocator alloc, (str)(...));
 StrAlloc str str_replace_str(str string, str a, str b, Allocator alloc);
+StrAlloc str str_remove(str string, char c, Allocator alloc);
+StrAlloc str str_remove_str(str string, str s, Allocator alloc);
 
 char *str_to_buffer(str s, char *buffer, size_t buffer_size);
 int str_find(str string, char c);
