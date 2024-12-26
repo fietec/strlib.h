@@ -2,7 +2,7 @@
 
 A simple string library for C.
 The library uses a `str` struct which contains the c-string and its length.
-Dynamic memory allocation is done via a custom `Allocator` function which is passed by the user.
+Dynamic memory allocation is done via a custom `Allocator` function, which is passed by the user.
 Therefore, custom memory management systems, such as arenas are supported. 
 The use of dynamic allocation is documented by the presence of `StrAlloc` in a function's declaration.
 
