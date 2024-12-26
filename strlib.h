@@ -56,7 +56,9 @@ int str_find(str string, char c);
 int str_find_str(str string, str query);
 bool str_starts_with(str base, str start);
 bool str_ends_with(str base, str end);
+size_t str__hash(str s);
 bool str_equals(str a, str b);
+bool str_equals_hashed(str a, str b);
 str str_from(str string, size_t from);
 str str_peek(str string, size_t from, size_t to);
 size_t str_count(str string, char c);
@@ -214,13 +216,33 @@ bool str_ends_with(str base, str end)
 	return true;
 }
 
+size_t str__hash(str s)
+{
+	size_t hash = 5381; 
+    for (size_t i = 0; i < s.len; ++i) {
+        hash = ((hash << 5) + hash) + s.value[i];
+    }
+    return hash;
+}
+
+bool str_equals_hashed(str a, str b)
+{
+	if (a.len != b.len) return false;
+	if (str__hash(a) != str__hash(b)) return false;
+	char *pa = a.value;
+	char *pb = b.value;
+	while (a.len-- > 0){
+		if (*pa++ != *pb++) return false;
+	}
+	return true;
+}
+
 bool str_equals(str a, str b)
 {
 	if (a.len != b.len) return false;
-	size_t len = a.len;
 	char *pa = a.value;
 	char *pb = b.value;
-	while (len-- > 0){
+	while (a.len-- > 0){
 		if (*pa++ != *pb++) return false;
 	}
 	return true;

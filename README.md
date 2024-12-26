@@ -34,6 +34,7 @@ int str_find_str(str string, str query);
 bool str_starts_with(str base, str start);
 bool str_ends_with(str base, str end);
 bool str_equals(str a, str b);
+bool str_equals_hashed(str a, str b);
 str str_from(str string, size_t from);
 str str_peek(str string, size_t from, size_t to);
 size_t str_count(str string, char c);
