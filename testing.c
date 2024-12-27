@@ -1,4 +1,5 @@
 #define STR_DEBUG
+#define STR_COLOR_PRINT
 #define STRLIB_IMPLEMENTATION
 #include "strlib.h"
 #include <stdio.h>
@@ -17,7 +18,7 @@ int main(void)
 	str b = str("World");
 	str c = str_concat(c_alloc, a, str(" "), b, str("!"));
 	str_print(c);
-	str_replace_str_mod(c, str("World"), str("earth"));
+	str_replace_str_mod(c, str("World"), str("the earth"));
 	str_print(c);
 	return 0;
 }

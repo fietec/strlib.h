@@ -7,8 +7,8 @@
 #include <assert.h>
 
 #ifndef ALLOCATOR
-#define ALLOCATOR
-typedef void* (*Allocator) (size_t);
+	#define ALLOCATOR
+	typedef void* (*Allocator) (size_t);
 #endif // ALLOCATOR
 
 #define STR_NUMARGS(...)  (sizeof((str[]){{0}, ##__VA_ARGS__})/sizeof(str)-1)
@@ -17,12 +17,18 @@ typedef void* (*Allocator) (size_t);
 #define StrMod // functions prefixed with this modify the content of a given string. Do not provide read-only constants!
 
 #ifdef STR_DEBUG
-#define str_info(msg, ...) (printf("%s:%d: " msg"\n", __FILE__, __LINE__, ## __VA_ARGS__))
+	#define str_info(msg, ...) (printf("%s:%d: " msg"\n", __FILE__, __LINE__, ## __VA_ARGS__))
 #else
-#define str_info(msg, ...)
+	#define str_info(msg, ...)
 #endif // STR_DEBUG
 
-#define str_error(msg, ...) (printf("[ERROR] %s:%s" msg "\n", __FILE__, __LINE__, ##__VA_ARGS__))
+#ifdef STR_COLOR_PRINT
+	#define STR_ANSI_RGB(r, g, b) ("\e[38;2;" #r ";" #g ";" #b "m") // set ansi color to rgb value
+	#define STR_ANSI_END "\e[0m" // reset ansi color
+	#define str_error(msg, ...) (fprintf(stderr, "%s[ERROR] %s:%d " msg STR_ANSI_END "\n", STR_ANSI_RGB(255, 0, 0), __FILE__, __LINE__, ##__VA_ARGS__))
+#else
+	#define str_error(msg, ...) (fprintf(stderr, "[ERROR] %s:%d " msg "%s\n", __FILE__, __LINE__, ##__VA_ARGS__))
+#endif // STR_COLOR_PRINT
 
 #define str_assert(state, msg, ...) (assert((state) && msg))
 	
@@ -298,7 +304,8 @@ void str_replace_mod(str string, char a, char b)
 void str_replace_str_mod(str string, str a, str b)
 {
 	if (b.len > a.len){
-		str_error("replace_str_mod: cannot replace string of length %d with string of length %d!", a.len, b.len);
+		str_info("test");
+		str_error("replace_str_mod: cannot replace string of length %u with string of length %u!", a.len, b.len);
 		return;
 	}
 	size_t count = str_count_str(string, a);
