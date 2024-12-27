@@ -17,9 +17,7 @@ int main(void)
 	str b = str("World");
 	str c = str_concat(c_alloc, a, str(" "), b, str("!"));
 	str_print(c);
-	printf("%d\n", c.len);
-	str d = str_remove_str(c, str("llo"), c_alloc);
-	str_print(d);
-	printf("%d\n", d.len);
+	str_replace_str_mod(c, str("ll"), str("d"));
+	str_print(c);
 	return 0;
 }

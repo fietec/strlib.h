@@ -5,6 +5,7 @@ The library uses a `str` struct which contains the c-string and its length.
 Dynamic memory allocation is done via a custom `Allocator` function, which is passed by the user.
 Therefore, custom memory management systems, such as arenas are supported. 
 The use of dynamic allocation is documented by the presence of `StrAlloc` in a function's declaration.
+Functions that modify the content of a given `str` are labeled with `StrMod`.
 
 ## Features
 
@@ -12,7 +13,7 @@ The use of dynamic allocation is documented by the presence of `StrAlloc` in a f
 For convenience, custom string functions are also included, namely:
 ``` c
 size_t strlib_len(char *s);
-void strlib_ncpy(char *s, size_t n, char *d);
+char* strlib_ncpy(char *s, size_t n, char *d);
 char* strlib_dup(char *s, Allocator alloc);
 void strlib_memset(char *d, char v, size_t n);
 ```
@@ -24,6 +25,7 @@ StrAlloc str str_dup(str string, Allocator alloc);
 StrAlloc str str_sub(Allocator alloc, str string, size_t from, size_t to);
 StrAlloc str_pair str_split(Allocator alloc, str string, char del);
 StrAlloc str str_concat(Allocator alloc, (str)(...));
+StrAlloc str str_replace(str string, char a, char b, Allocator alloc);
 StrAlloc str str_replace_str(str string, str a, str b, Allocator alloc);
 StrAlloc str str_remove(str string, char c, Allocator alloc);
 StrAlloc str str_remove_str(str string, str s, Allocator alloc);
@@ -39,7 +41,8 @@ str str_from(str string, size_t from);
 str str_peek(str string, size_t from, size_t to);
 size_t str_count(str string, char c);
 size_t str_count_str(str string, str s);
-void str_replace(str string, char a, char b);
+
+StrMod void str_replace_mod(str string, char a, char b);
 
 // helper macros
 str str(c-string)

@@ -13,7 +13,8 @@ typedef void* (*Allocator) (size_t);
 
 #define STR_NUMARGS(...)  (sizeof((str[]){{0}, ##__VA_ARGS__})/sizeof(str)-1)
 #define STR_NOT_FOUND -1
-#define StrAlloc
+#define StrAlloc // functions prefixed with this dynamically allocate memory
+#define StrMod // functions prefixed with this modify the content of a given string. Do not provide read-only constants!
 
 #ifdef STR_DEBUG
 #define str_info(msg, ...) (printf("%s:%d: " msg"\n", __FILE__, __LINE__, ## __VA_ARGS__))
@@ -48,6 +49,7 @@ StrAlloc str str_dup(str string, Allocator alloc);
 StrAlloc str str_sub(Allocator alloc, str string, size_t from, size_t to);
 StrAlloc str_pair str_split(Allocator alloc, str string, char del);
 StrAlloc str str__concat(Allocator alloc, int n, ...);
+StrAlloc str str_replace(str string, char a, char b, Allocator alloc);
 StrAlloc str str_replace_str(str string, str a, str b, Allocator alloc);
 StrAlloc str str_remove(str string, char c, Allocator alloc);
 StrAlloc str str_remove_str(str string, str s, Allocator alloc);
@@ -63,7 +65,8 @@ str str_from(str string, size_t from);
 str str_peek(str string, size_t from, size_t to);
 size_t str_count(str string, char c);
 size_t str_count_str(str string, str s);
-void str_replace(str string, char a, char b);
+
+StrMod void str_replace_mod(str string, char a, char b);
 
 #define str(s) (str){.value=(s), .len=strlib_len((s))}
 #define str_concat(alloc, ...) (str__concat((alloc), STR_NUMARGS(__VA_ARGS__), ##__VA_ARGS__))
@@ -104,12 +107,13 @@ char* strlib_dup(char *s, Allocator alloc)
 {
 	str__assert_allocator(alloc);
 	if (s == NULL || alloc == NULL) return NULL;
-	char *d = (char*) alloc(strlib_len(s)+1);
+	char *string = (char*) alloc(strlib_len(s)+1);
+	char *d = string;
 	str__assert_alloc(d);
 	while (*s != '\0'){
 		*d++ = *s++;
 	}
-	return d;
+	return string;
 }
 
 str str_new(char *s, Allocator alloc)
@@ -281,13 +285,49 @@ size_t str_count_str(str string, str s)
 	return count;
 }
 
-void str_replace(str string, char a, char b)
+void str_replace_mod(str string, char a, char b)
 {
 	char *p;
 	for (size_t i=0; i<string.len; ++i){
 		p = string.value + i;
 		if (*p == a) *p=b;
 	}
+}
+
+void str_replace_str_mod(str string, str a, str b)
+{
+	if (b.len > a.len){
+		str_error("replace_str_mod: cannot replace string of length %d with string of length %d!", a.len, b.len);
+		return;
+	}
+	size_t count = str_count_str(string, a);
+	size_t length = string.len + count*(b.len-a.len);
+	if (count == 0) return;
+	char *r = string.value;
+	char *w = r;
+	for (size_t i=0; i<count; ++i){
+		char *n = r + str_find_str(str(r), a);
+		if (n-r > 0){
+			w = strlib_ncpy(r, n-r, w);
+		}
+		w = strlib_ncpy(b.value, b.len, w);
+		r = n+a.len;
+	}
+	if (r-string.value < length){
+		strlib_memset(r, 0, length-(r-string.value));
+	}
+}
+
+str str_replace(str string, char a, char b, Allocator alloc)
+{
+	str__assert_allocator(alloc);
+	char *value = strlib_dup(string.value, alloc);
+	char *rw = value;
+	for (size_t i=0; i<string.len; ++i){
+		if (*rw == a) *rw = b;
+		rw++;
+	}
+	return (str) {.value=value, .len=string.len};
 }
 
 str str_replace_str(str string, str a, str b, Allocator alloc)
@@ -349,12 +389,10 @@ str str_remove_str(str string, str s, Allocator alloc)
 		int next = str_find_str(string, s);
 		str_assert(next != STR_NOT_FOUND, "string has changed!");
 		char *n = r + next;
-		str_info("Found next s at %d\n", n-string.value);
 		if (next > 0){
 			w = strlib_ncpy(r, next, w);
 		}
 		r = n + s.len;
-		str_info("continuing reading at %d\n", r-string.value);
 	}
 	if (w - value < length){
 		strlib_ncpy(r, length-(w-value), w);
