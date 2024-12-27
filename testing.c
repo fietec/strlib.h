@@ -17,7 +17,7 @@ int main(void)
 	str b = str("World");
 	str c = str_concat(c_alloc, a, str(" "), b, str("!"));
 	str_print(c);
-	str_replace_str_mod(c, str("ll"), str("d"));
+	str_replace_str_mod(c, str("World"), str("earth"));
 	str_print(c);
 	return 0;
 }

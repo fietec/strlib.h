@@ -313,9 +313,10 @@ void str_replace_str_mod(str string, str a, str b)
 		w = strlib_ncpy(b.value, b.len, w);
 		r = n+a.len;
 	}
-	if (r-string.value < length){
-		strlib_memset(r, 0, length-(r-string.value));
+	if (w-string.value < length){
+		w = strlib_ncpy(r, length-(w-string.value)+1, w);
 	}
+	*w = '\0';
 }
 
 str str_replace(str string, char a, char b, Allocator alloc)
