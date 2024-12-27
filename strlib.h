@@ -5,6 +5,7 @@
 #include <stdarg.h>
 #include <stdbool.h>
 #include <assert.h>
+#include <stdlib.h> // only for exit
 
 #ifndef ALLOCATOR
 	#define ALLOCATOR
@@ -30,10 +31,10 @@
 	#define str_error(msg, ...) (fprintf(stderr, "[ERROR] %s:%d " msg "%s\n", __FILE__, __LINE__, ##__VA_ARGS__))
 #endif // STR_COLOR_PRINT
 
-#define str_assert(state, msg, ...) (assert((state) && msg))
+#define str_assert(state, msg, ...) do{if (!(state)) {str_error(msg, ##__VA_ARGS__); exit(1);}} while (0)
 	
-#define str__assert_alloc(value) (str_assert((value) != NULL, "Out of memory!"))
-#define str__assert_allocator(alloc) (str_assert((alloc) != NULL, "Allocator may not be NULL!"))
+#define str__assert_alloc(value) str_assert((value)!=NULL, "Out of memory!")
+#define str__assert_allocator(alloc) str_assert((alloc) != NULL, "Allocator may not be NULL!")
 
 typedef struct{
 	char *value;

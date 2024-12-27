@@ -14,11 +14,11 @@ void* c_alloc(size_t n)
 
 int main(void)
 {
-	str a = str("Hallo");
+	str a = str("Hello");
 	str b = str("World");
 	str c = str_concat(c_alloc, a, str(" "), b, str("!"));
 	str_print(c);
-	str_replace_str_mod(c, str("World"), str("the earth"));
+	str_replace_str_mod(c, b, str("Earth"));
 	str_print(c);
 	return 0;
 }
