@@ -46,8 +46,12 @@ StrMod void str_replace_mod(str string, char a, char b);
 StrMod void str_replace_str_mod(str string, str a, str b);
 
 // helper macros
-str str(c-string)
+str str(char*, ...)
 void str_print(str)
 char str_at(str, int)
 bool str_empty(str)
+
+// console output
+str_info(char*, ...)
+str_error(char*, ...) // define STR_COLOR_PRINT to enable printing errors in red 
 ```
