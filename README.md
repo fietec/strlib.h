@@ -30,6 +30,7 @@ StrAlloc str str_replace(str string, char a, char b, Allocator alloc);
 StrAlloc str str_replace_str(str string, str a, str b, Allocator alloc);
 StrAlloc str str_remove(str string, char c, Allocator alloc);
 StrAlloc str str_remove_str(str string, str s, Allocator alloc);
+StrAlloc str str_insert(str string, str s, size_t index, Allocator alloc);
 
 char *str_to_buffer(str s, char *buffer, size_t buffer_size);
 int str_find(str string, char c);

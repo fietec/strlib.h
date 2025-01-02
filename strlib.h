@@ -61,6 +61,7 @@ StrAlloc str str_replace(str string, char a, char b, Allocator alloc);
 StrAlloc str str_replace_str(str string, str a, str b, Allocator alloc);
 StrAlloc str str_remove(str string, char c, Allocator alloc);
 StrAlloc str str_remove_str(str string, str s, Allocator alloc);
+StrAlloc str str_insert(str string, str s, size_t index, Allocator alloc);
 char *str_to_buffer(str s, char *buffer, size_t buffer_size);
 int str_find(str string, char c);
 int str_find_str(str string, str query);
@@ -80,6 +81,7 @@ StrMod void str_replace_str_mod(str string, str a, str b);
 #define str(s) (str){.value=(s), .len=strlib_len((s))}
 #define str_concat(alloc, ...) (str__concat((alloc), STR_NUMARGS(__VA_ARGS__), ##__VA_ARGS__))
 #define str_print(str) (printf("\"%s\"\n", (str).value))
+#define str_print_pair(str_pair) (printf("(\"%s\", \"%s\")\n", (str_pair).a.value, (str_pair).b.value))
 #define str_at(str, i) ((str).value[(i)])
 #define str_empty(str) ((str).len == 0)
 
@@ -418,6 +420,20 @@ str str_remove_str(str string, str s, Allocator alloc)
 	if (w - value < length){
 		strlib_ncpy(r, length-(w-value), w);
 	}
+	return (str) {.value=value, .len=length};
+}
+
+str str_insert(str string, str s, size_t index, Allocator alloc)
+{
+	str__assert_allocator(alloc);
+	if (index >= string.len) return str_dup(string, alloc);
+	size_t length = string.len + s.len;
+	char *value = alloc(length + 1);
+	str__assert_alloc(value);
+	char *w = strlib_ncpy(string.value, index, value);
+	w = strlib_ncpy(s.value, s.len, w);
+	w = strlib_ncpy(string.value+index, string.len-index, w);
+	*w = '\0';
 	return (str) {.value=value, .len=length};
 }
 
