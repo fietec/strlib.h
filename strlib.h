@@ -28,7 +28,7 @@
 	#define STR_ANSI_END "\e[0m" // reset ansi color
 	#define str_error(msg, ...) (fprintf(stderr, "%s[ERROR] %s:%d " msg STR_ANSI_END "\n", STR_ANSI_RGB(255, 0, 0), __FILE__, __LINE__, ##__VA_ARGS__))
 #else
-	#define str_error(msg, ...) (fprintf(stderr, "[ERROR] %s:%d " msg "%s\n", __FILE__, __LINE__, ##__VA_ARGS__))
+	#define str_error(msg, ...) (fprintf(stderr, "[ERROR] %s:%d " msg "\n", __FILE__, __LINE__, ##__VA_ARGS__))
 #endif // STR_COLOR_PRINT
 
 #define str_assert(state, msg, ...) do{if (!(state)) {str_error(msg, ##__VA_ARGS__); exit(1);}} while (0)
@@ -53,8 +53,9 @@ void strlib_memset(char *d, char v, size_t n);
 
 StrAlloc str str_new(char *s, Allocator alloc);
 StrAlloc str str_dup(str string, Allocator alloc);
-StrAlloc str str_sub(Allocator alloc, str string, size_t from, size_t to);
-StrAlloc str_pair str_split(Allocator alloc, str string, char del);
+StrAlloc str str_sub(str string, size_t from, size_t to, Allocator alloc);
+StrAlloc str_pair str_split(str string, char del, Allocator alloc);
+StrAlloc str_pair str_split_str(str string, str del, Allocator alloc);
 StrAlloc str str__concat(Allocator alloc, int n, ...);
 StrAlloc str str_replace(str string, char a, char b, Allocator alloc);
 StrAlloc str str_replace_str(str string, str a, str b, Allocator alloc);
@@ -169,7 +170,7 @@ str str__concat(Allocator alloc, int n, ...)
 	return (str) {.value=value, .len=length};
 }
 
-str str_sub(Allocator alloc, str string, size_t from, size_t to)
+str str_sub(str string, size_t from, size_t to, Allocator alloc)
 {
 	str__assert_allocator(alloc);
 	if (to > string.len || from >= to) return (str) {0};
@@ -180,14 +181,25 @@ str str_sub(Allocator alloc, str string, size_t from, size_t to)
 	return (str) {.value=value, .len=length};
 }
 
-str_pair str_split(Allocator alloc, str string, char del)
+str_pair str_split(str string, char del, Allocator alloc)
 {
 	str__assert_allocator(alloc);
 	if (string.len == 0 || string.value == NULL) return (str_pair) {0};
 	for (size_t i=0; i<string.len; ++i){
 		if (string.value[i] == del){
-			return (str_pair) {str_sub(alloc, string, 0, i), str_sub(alloc, string, i+1, string.len)};
+			return (str_pair) {str_sub(string, 0, i, alloc), str_sub(string, i+1, string.len, alloc)};
 		}
+	}
+	return (str_pair) {str_dup(string, alloc), {0}};
+}
+
+str_pair str_split_str(str string, str del, Allocator alloc)
+{
+	str__assert_allocator(alloc);
+	if (string.len == 0 || string.value == NULL) return (str_pair) {0};
+	int i = str_find_str(string, del);
+	if (i >= 0){
+		return (str_pair) {str_sub(string, 0, i, alloc), str_sub(string, i+del.len, string.len, alloc)};
 	}
 	return (str_pair) {str_dup(string, alloc), {0}};
 }
@@ -305,7 +317,6 @@ void str_replace_mod(str string, char a, char b)
 void str_replace_str_mod(str string, str a, str b)
 {
 	if (b.len > a.len){
-		str_info("test");
 		str_error("replace_str_mod: cannot replace string of length %u with string of length %u!", a.len, b.len);
 		return;
 	}

@@ -22,8 +22,9 @@ void strlib_memset(char *d, char v, size_t n);
 ```c 
 StrAlloc str str_new(char *s, Allocator alloc);
 StrAlloc str str_dup(str string, Allocator alloc);
-StrAlloc str str_sub(Allocator alloc, str string, size_t from, size_t to);
-StrAlloc str_pair str_split(Allocator alloc, str string, char del);
+StrAlloc str str_sub(str string, size_t from, size_t to, Allocator alloc);
+StrAlloc str_pair str_split(str string, char del, Allocator alloc);
+StrAlloc str_pair str_split_str(str string, str del, Allocator alloc);
 StrAlloc str str_concat(Allocator alloc, (str)(...));
 StrAlloc str str_replace(str string, char a, char b, Allocator alloc);
 StrAlloc str str_replace_str(str string, str a, str b, Allocator alloc);
