@@ -48,8 +48,10 @@ str str_peek(str string, size_t from, size_t to);
 size_t str_count(str string, char c);
 size_t str_count_str(str string, str s);
 
-StrMod void str_replace_mod(str string, char a, char b);
-StrMod void str_replace_str_mod(str string, str a, str b);
+StrMod void str_replace_mod(str *string, char a, char b);
+StrMod void str_replace_str_mod(str *string, str a, str b);
+StrMod void str_remove_mod(str *string, char c);
+StrMod void str_remove_str_mod(str *string, str s);
 
 // manual memory deallocation
 void str_free(str string, Deallocator dealloc);
