@@ -36,6 +36,7 @@
 	
 #define str__assert_alloc(value) str_assert((value)!=NULL, "Out of memory!")
 #define str__assert_allocator(alloc) str_assert((alloc) != NULL, "Allocator may not be NULL!")
+#define str__assert_deallocator(dealloc) str_assert((dealloc) != NULL, "Deallocator may not be NULL!")
 #define str__free(_str, _dealloc) do{if((_str).value!=NULL){_dealloc((_str).value);}}while(0)
 
 typedef struct{
@@ -524,17 +525,20 @@ void str_print_array(str_array arr)
 
 void str_free(str string, Deallocator dealloc)
 {
+    str__assert_deallocator(dealloc);
     str__free(string, dealloc);
 }
 
 void str_free_pair(str_pair pair, Deallocator dealloc)
 {
+    str__assert_deallocator(dealloc);
     str__free(pair.a, dealloc);
     str__free(pair.b, dealloc);
 }
 
 void str_free_array(str_array array, Deallocator dealloc)
 {
+    str__assert_deallocator(dealloc);
     for (size_t i=0; i<array.count; ++i){
         str__free(array.items[i], dealloc);
     }
