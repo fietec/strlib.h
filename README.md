@@ -51,6 +51,11 @@ size_t str_count_str(str string, str s);
 StrMod void str_replace_mod(str string, char a, char b);
 StrMod void str_replace_str_mod(str string, str a, str b);
 
+// manual memory deallocation
+void str_free(str string, Deallocator dealloc);
+void str_free_pair(str_pair pair, Deallocator dealloc);
+void str_free_array(str_array array, Deallocator dealloc);
+
 // printing
 void str_print(str)
 void str_print_pair(str_pair)

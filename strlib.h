@@ -10,6 +10,7 @@
 #ifndef ALLOCATOR
 	#define ALLOCATOR
 	typedef void* (*Allocator) (size_t);
+    typedef void  (*Deallocator) (void*);
 #endif // ALLOCATOR
 
 #define STR_NUMARGS(...)  (sizeof((str[]){{0}, ##__VA_ARGS__})/sizeof(str)-1)
@@ -35,6 +36,7 @@
 	
 #define str__assert_alloc(value) str_assert((value)!=NULL, "Out of memory!")
 #define str__assert_allocator(alloc) str_assert((alloc) != NULL, "Allocator may not be NULL!")
+#define str__free(_str, _dealloc) do{if((_str).value!=NULL){_dealloc((_str).value);}}while(0)
 
 typedef struct{
 	char *value;
@@ -83,6 +85,11 @@ str str_from(str string, size_t from);
 str str_peek(str string, size_t from, size_t to);
 size_t str_count(str string, char c);
 size_t str_count_str(str string, str s);
+
+// use these functions when manually freeing allocated memory
+void str_free(str string, Deallocator dealloc);
+void str_free_pair(str_pair pair, Deallocator dealloc);
+void str_free_array(str_array array, Deallocator dealloc);
 
 StrMod void str_replace_mod(str string, char a, char b);
 StrMod void str_replace_str_mod(str string, str a, str b);
@@ -513,6 +520,25 @@ void str_print_array(str_array arr)
        printf("\"%s\", ", arr.items[i].value);
     }
     printf("\"%s\"}\n", arr.items[arr.count-1].value);
+}
+
+void str_free(str string, Deallocator dealloc)
+{
+    str__free(string, dealloc);
+}
+
+void str_free_pair(str_pair pair, Deallocator dealloc)
+{
+    str__free(pair.a, dealloc);
+    str__free(pair.b, dealloc);
+}
+
+void str_free_array(str_array array, Deallocator dealloc)
+{
+    for (size_t i=0; i<array.count; ++i){
+        str__free(array.items[i], dealloc);
+    }
+    dealloc(array.items);
 }
 
 #endif // STRLIB_IMPLEMENTATION
