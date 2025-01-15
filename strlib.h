@@ -109,6 +109,8 @@ void* str__alloc(Allocator alloc, size_t n);
 #define str_empty(str) ((str).len == 0)
 
 #endif // _STRLIB_H
+
+// strlib.c
 #ifdef STRLIB_IMPLEMENTATION
 
 size_t strlib_len(char *s)
@@ -591,6 +593,7 @@ void* str__alloc(Allocator alloc, size_t n)
 {
     void *p = alloc(n);
     str__assert_alloc(p);
+    strlib_memset(p, 0, n);
     return p;
 }
 
