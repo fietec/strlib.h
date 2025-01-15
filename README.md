@@ -25,6 +25,8 @@ StrAlloc str str_dup(str string, Allocator alloc);
 StrAlloc str str_sub(str string, size_t from, size_t to, Allocator alloc);
 StrAlloc str_pair str_split(str string, char del, Allocator alloc);
 StrAlloc str_pair str_split_str(str string, str del, Allocator alloc);
+StrAlloc str_array str_split_all(str string, char del, Allocator alloc);
+StrAlloc str_array str_split_str_all(str string, str del, Allocator alloc);
 StrAlloc str str_concat(Allocator alloc, (str)(...));
 StrAlloc str str_replace(str string, char a, char b, Allocator alloc);
 StrAlloc str str_replace_str(str string, str a, str b, Allocator alloc);
@@ -49,10 +51,13 @@ size_t str_count_str(str string, str s);
 StrMod void str_replace_mod(str string, char a, char b);
 StrMod void str_replace_str_mod(str string, str a, str b);
 
-// helper macros
-str str(char*, ...)
+// printing
 void str_print(str)
 void str_print_pair(str_pair)
+void str_print_array(str_array);
+
+// helper macros
+str str(char*)
 char str_at(str, int)
 bool str_empty(str)
 

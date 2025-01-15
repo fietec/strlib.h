@@ -46,6 +46,11 @@ typedef struct{
 	str b;
 } str_pair;
 
+typedef struct{
+    str *items;
+    size_t count;
+} str_array;
+
 size_t strlib_len(char *s);
 char* strlib_ncpy(char *s, size_t n, char *d);
 char* strlib_dup(char *s, Allocator alloc);
@@ -56,6 +61,8 @@ StrAlloc str str_dup(str string, Allocator alloc);
 StrAlloc str str_sub(str string, size_t from, size_t to, Allocator alloc);
 StrAlloc str_pair str_split(str string, char del, Allocator alloc);
 StrAlloc str_pair str_split_str(str string, str del, Allocator alloc);
+StrAlloc str_array str_split_all(str string, char del, Allocator alloc);
+StrAlloc str_array str_split_str_all(str string, str del, Allocator alloc);
 StrAlloc str str__concat(Allocator alloc, int n, ...);
 StrAlloc str str_replace(str string, char a, char b, Allocator alloc);
 StrAlloc str str_replace_str(str string, str a, str b, Allocator alloc);
@@ -65,9 +72,9 @@ StrAlloc str str_insert(str string, str s, size_t index, Allocator alloc);
 char *str_to_buffer(str s, char *buffer, size_t buffer_size);
 int str_find(str string, char c);
 int str_find_str(str string, str query);
-bool str_starts_with(str string, char c)
+bool str_starts_with(str string, char c);
 bool str_starts_with_str(str base, str start);
-bool str_ends_with(str string, char c)
+bool str_ends_with(str string, char c);
 bool str_ends_with_str(str base, str end);
 size_t str__hash(str s);
 bool str_equals(str a, str b);
@@ -79,6 +86,8 @@ size_t str_count_str(str string, str s);
 
 StrMod void str_replace_mod(str string, char a, char b);
 StrMod void str_replace_str_mod(str string, str a, str b);
+
+void str_print_array(str_array arr);
 
 #define str(s) (str){.value=(s), .len=strlib_len((s))}
 #define str_concat(alloc, ...) (str__concat((alloc), STR_NUMARGS(__VA_ARGS__), ##__VA_ARGS__))
@@ -208,6 +217,52 @@ str_pair str_split_str(str string, str del, Allocator alloc)
 	return (str_pair) {str_dup(string, alloc), {0}};
 }
 
+str_array str_split_all(str string, char del, Allocator alloc)
+{
+    str__assert_allocator(alloc);
+    if (string.len == 0 || string.value == NULL) return (str_array) {0};
+    size_t count = str_count(string, del);
+    str *array = alloc((count+1)*sizeof(str));
+    char *r = string.value;
+    char *w;
+    for (size_t i=0; i<count; ++i){
+        int size = str_find(str(r), del);
+        str_assert(size != STR_NOT_FOUND, "string has changed!");
+        w = alloc(size+1);
+        strlib_ncpy(r, size, w);
+        array[i] = (str) {.value=w, .len=size};
+        r += size+1;
+    }
+    size_t rem = string.value+string.len-r;
+    w = alloc(rem+1);
+    strlib_ncpy(r, rem, w);
+    array[count] = (str) {.value=w, .len=rem};
+    return (str_array) {.items=array, .count=count+1};
+}
+
+str_array str_split_str_all(str string, str del, Allocator alloc)
+{
+    str__assert_allocator(alloc);
+    if (string.len == 0 || string.value == NULL) return (str_array) {0};
+    size_t count = str_count_str(string, del);
+    str *array = alloc((count+1)*sizeof(str));
+    char *r = string.value;
+    char *w;
+    for (size_t i=0; i<count; ++i){
+        int size = str_find_str(str(r), del);
+        str_assert(size != STR_NOT_FOUND, "string has changed!");
+        w = alloc(size+1);
+        strlib_ncpy(r, size, w);
+        array[i] = (str) {.value=w, .len=size};
+        r += size+del.len;
+    }
+    size_t rem = string.value+string.len-r;
+    w = alloc(rem+1);
+    strlib_ncpy(r, rem, w);
+    array[count] = (str) {.value=w, .len=rem};
+    return (str_array) {.items=array, .count=count+1};
+}
+
 int str_find(str string, char c)
 {
 	for (size_t i=0; i<string.len; ++i){
@@ -253,7 +308,7 @@ bool str_starts_with(str string, char c)
 bool str_ends_with(str string, char c)
 {
     if (string.value == NULL || string.len < 1) return false;
-    return *(string.value+str.len-1) == c;
+    return *(string.value+string.len-1) == c;
 }
 
 size_t str__hash(str s)
@@ -449,6 +504,15 @@ str str_insert(str string, str s, size_t index, Allocator alloc)
 	w = strlib_ncpy(string.value+index, string.len-index, w);
 	*w = '\0';
 	return (str) {.value=value, .len=length};
+}
+
+void str_print_array(str_array arr)
+{
+    putchar('{');
+    for (size_t i=0; i<arr.count-1; ++i){
+       printf("\"%s\", ", arr.items[i].value);
+    }
+    printf("\"%s\"}\n", arr.items[arr.count-1].value);
 }
 
 #endif // STRLIB_IMPLEMENTATION
