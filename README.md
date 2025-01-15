@@ -35,8 +35,10 @@ StrAlloc str str_insert(str string, str s, size_t index, Allocator alloc);
 char *str_to_buffer(str s, char *buffer, size_t buffer_size);
 int str_find(str string, char c);
 int str_find_str(str string, str query);
-bool str_starts_with(str base, str start);
-bool str_ends_with(str base, str end);
+bool str_starts_with(str string, char c);
+bool str_starts_with_str(str base, str start);
+bool str_ends_with(str string, char c);
+bool str_ends_with_str(str base, str end);
 bool str_equals(str a, str b);
 bool str_equals_hashed(str a, str b);
 str str_from(str string, size_t from);
@@ -50,6 +52,7 @@ StrMod void str_replace_str_mod(str string, str a, str b);
 // helper macros
 str str(char*, ...)
 void str_print(str)
+void str_print_pair(str_pair)
 char str_at(str, int)
 bool str_empty(str)
 

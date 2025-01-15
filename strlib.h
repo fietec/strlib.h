@@ -65,8 +65,10 @@ StrAlloc str str_insert(str string, str s, size_t index, Allocator alloc);
 char *str_to_buffer(str s, char *buffer, size_t buffer_size);
 int str_find(str string, char c);
 int str_find_str(str string, str query);
-bool str_starts_with(str base, str start);
-bool str_ends_with(str base, str end);
+bool str_starts_with(str string, char c)
+bool str_starts_with_str(str base, str start);
+bool str_ends_with(str string, char c)
+bool str_ends_with_str(str base, str end);
 size_t str__hash(str s);
 bool str_equals(str a, str b);
 bool str_equals_hashed(str a, str b);
@@ -218,12 +220,12 @@ int str_find_str(str string, str query)
 {
 	if (str_empty(string) || str_empty(query) || query.len > string.len) return STR_NOT_FOUND;
 	for (size_t i=0; i<string.len-query.len+1; ++i){
-		if (str_starts_with(str_from(string, i), query)) return i;
+		if (str_starts_with_str(str_from(string, i), query)) return i;
 	}
 	return STR_NOT_FOUND;
 }
 
-bool str_starts_with(str base, str start)
+bool str_starts_with_str(str base, str start)
 {
 	if (start.len > base.len) return false;
 	for (size_t i=0; i<start.len; ++i){
@@ -232,7 +234,7 @@ bool str_starts_with(str base, str start)
 	return true;
 }
 
-bool str_ends_with(str base, str end)
+bool str_ends_with_str(str base, str end)
 {
 	if (end.len > base.len) return false;
 	size_t offset = end.len - base.len;
@@ -240,6 +242,18 @@ bool str_ends_with(str base, str end)
 		if (base.value[offset+i] != end.value[i]) return false;
 	}
 	return true;
+}
+
+bool str_starts_with(str string, char c)
+{
+    if (string.value == NULL || string.len < 1) return false;
+    return *string.value == c;
+}
+
+bool str_ends_with(str string, char c)
+{
+    if (string.value == NULL || string.len < 1) return false;
+    return *(string.value+str.len-1) == c;
 }
 
 size_t str__hash(str s)
