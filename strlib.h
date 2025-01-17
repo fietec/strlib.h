@@ -13,7 +13,7 @@
     typedef void  (*Deallocator) (void*);
 #endif // ALLOCATOR
 
-#define STR_NUMARGS(...)  (sizeof((str[]){{0}, ##__VA_ARGS__})/sizeof(str)-1)
+#define STR_NUMARGS(...)  (sizeof((str[]){ __VA_ARGS__})/sizeof(str))
 #define STR_NOT_FOUND -1
 #define StrAlloc // functions prefixed with this dynamically allocate memory
 #define StrMod // functions prefixed with this modify the content of a given string. Do not provide read-only constants!
@@ -67,8 +67,7 @@ StrAlloc str str_sub(str string, size_t from, size_t to, Allocator alloc);
 StrAlloc str_pair str_split(str string, char del, Allocator alloc);
 StrAlloc str_pair str_split_str(str string, str del, Allocator alloc);
 StrAlloc str_array str_split_all(str string, char del, Allocator alloc);
-StrAlloc str_array str_split_str_all(str string, str del, Allocator alloc);
-StrAlloc str str__concat(Allocator alloc, int n, ...);
+StrAlloc str_array str_split_all_str(str string, str del, Allocator alloc);
 StrAlloc str str_replace(str string, char a, char b, Allocator alloc);
 StrAlloc str str_replace_str(str string, str a, str b, Allocator alloc);
 StrAlloc str str_remove(str string, char c, Allocator alloc);
@@ -83,6 +82,9 @@ StrAlloc str str_trim_right(str string, char c, Allocator alloc);
 StrAlloc str str_trim_right_str(str string, str s, Allocator alloc);
 StrAlloc str str_trim(str string, char c, Allocator alloc);
 StrAlloc str str_trim_str(str string, str s, Allocator alloc);
+StrAlloc str str_merge(str_array strings, Allocator alloc);
+StrAlloc str str_join(str_array strings, char delimiter, Allocator alloc);
+StrAlloc str str_join_str(str_array strings, str delimiter, Allocator alloc);
 
 // functions that modify a string's content, return the given string pointer
 StrMod str* str_to_upper_mod(str *string);
@@ -95,6 +97,8 @@ StrMod str* str_remove_str_mod(str *string, str s);
 char *str_to_buffer(str s, char *buffer, size_t buffer_size);
 int str_find(str string, char c);
 int str_find_str(str string, str query);
+bool str_contains(str string, char c);
+bool str_contains_str(str string, str s);
 bool str_starts_with(str string, char c);
 bool str_starts_with_str(str base, str start);
 bool str_ends_with(str string, char c);
@@ -117,7 +121,8 @@ void str_print_array(str_array arr);
 void* str__alloc(Allocator alloc, size_t n);
 
 #define str(s) (str){.value=(s), .len=strlib_len((s))}
-#define str_concat(alloc, ...) (str__concat((alloc), STR_NUMARGS(__VA_ARGS__), ##__VA_ARGS__))
+#define str_array(...) ((str_array){.items=((str[]){__VA_ARGS__}), .count=STR_NUMARGS(__VA_ARGS__)})
+#define str_concat(alloc, ...) (str_merge(str_array(__VA_ARGS__), (alloc)))
 #define str_print(str) (printf("\"%s\"\n", (str).value))
 #define str_print_pair(str_pair) (printf("(\"%s\", \"%s\")\n", (str_pair).a.value, (str_pair).b.value))
 #define str_at(str, i) ((str).value[(i)])
@@ -206,29 +211,20 @@ char* str_to_buffer(str s, char *buffer, size_t buffer_size)
 	return strlib_ncpy(s.value, s.len, buffer);
 }
 
-str str__concat(Allocator alloc, int n, ...)
+StrAlloc str str_merge(str_array strings, Allocator alloc)
 {
-	str__assert_allocator(alloc);
-	if (n == 0) return (str) {0};
-	va_list args;
-	va_start(args, n);
-	str strings[n];
-	size_t length = 0;
-	for (int i=0; i<n; ++i){
-		str temp = va_arg(args, str);
-		length += temp.len;
-		strings[i] = temp;
-	}
-	va_end(args);
-	size_t buff_size = length+1;
-	char *value = str__alloc(alloc, buff_size);
-	char *w = value;
-	for (int i=0; i<n; ++i){
-		str temp = strings[i];
-		w = str_to_buffer(temp, w, buff_size);
-		buff_size -= temp.len;
-	}
-	return (str) {.value=value, .len=length};
+    str__assert_allocator(alloc);
+    size_t length = 0;
+    for (size_t i=0; i<strings.count; ++i){
+        length += strings.items[i].len;
+    }
+    char *value = str__alloc(alloc, length+1);
+    char *w = value;
+    for (size_t i=0; i<strings.count; ++i){
+        str item = strings.items[i];
+        w = strlib_ncpy(item.value, item.len, w);
+    }
+    return (str) {.value=value, .len=length};
 }
 
 str str_sub(str string, size_t from, size_t to, Allocator alloc)
@@ -290,7 +286,7 @@ str_array str_split_all(str string, char del, Allocator alloc)
     return (str_array) {.items=array, .count=count+1};
 }
 
-str_array str_split_str_all(str string, str del, Allocator alloc)
+str_array str_split_all_str(str string, str del, Allocator alloc)
 {
     str__assert_allocator(alloc);
     if (string.len == 0 || string.value == NULL) return (str_array) {0};
@@ -394,6 +390,23 @@ bool str_equals(str a, str b)
 		if (*pa++ != *pb++) return false;
 	}
 	return true;
+}
+
+bool str_contains(str string, char c)
+{
+    for (size_t i=0; i<string.len; ++i){
+        if (*(string.value+i) == c) return true;
+    }
+    return false;
+}
+
+bool str_contains_str(str string, str s)
+{
+    char *r = string.value;
+    while (r-string.value < string.len){
+        if (str_starts_with_str(str(r++), s)) return true;
+    }
+    return false;
 }
 
 str str_from(str string, size_t from)
@@ -742,6 +755,44 @@ str str_trim_str(str string, str s, Allocator alloc)
     if (length <= 0) return str_new("", alloc);
     char *value = str__alloc(alloc, length+1);
     strlib_ncpy(r1, length, value);
+    return (str) {.value=value, .len=length};
+}
+
+str str_join(str_array strings, char delimiter, Allocator alloc)
+{
+    str__assert_allocator(alloc);
+    if (strings.count == 0) return str_new("", alloc);
+    size_t length = strings.count-1;
+    for (size_t i=0; i<strings.count; ++i){
+        length += strings.items[i].len;
+    }
+    char *value = str__alloc(alloc, length+1);
+    char *w = value;
+    for (size_t i=0; i<strings.count; ++i){
+        str item = strings.items[i];
+        w = strlib_ncpy(item.value, item.len, w);
+        if (i < strings.count-1)*w++ = delimiter;
+    }
+    return (str) {.value=value, .len=length};
+}
+
+str str_join_str(str_array strings, str delimiter, Allocator alloc)
+{
+    str__assert_allocator(alloc);
+    if (strings.count == 0) return str_new("", alloc);
+    size_t length = (strings.count-1)*delimiter.len;
+    for (size_t i=0; i<strings.count; ++i){
+        length += strings.items[i].len;
+    }
+    char *value = str__alloc(alloc, length+1);
+    char *w = value;
+    for (size_t i=0; i<strings.count; ++i){
+        str item = strings.items[i];
+        w = strlib_ncpy(item.value, item.len, w);
+        if (i < strings.count-1){
+            w = strlib_ncpy(delimiter.value, delimiter.len, w);
+        }
+    }
     return (str) {.value=value, .len=length};
 }
 

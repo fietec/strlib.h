@@ -44,6 +44,9 @@ StrAlloc str str_trim_right(str string, char c, Allocator alloc);
 StrAlloc str str_trim_right_str(str string, str s, Allocator alloc);
 StrAlloc str str_trim(str string, char c, Allocator alloc);
 StrAlloc str str_trim_str(str string, str s, Allocator alloc);
+StrAlloc str str_merge(str_array strings, Allocator alloc);
+StrAlloc str str_join(str_array strings, char delimiter, Allocator alloc);
+StrAlloc str str_join_str(str_array strings, str delimiter, Allocator alloc);
 
 StrMod str* str_to_upper_mod(str *string);
 StrMod str* str_to_lower_mod(str *string);
@@ -55,6 +58,8 @@ StrMod str* str_remove_str_mod(str *string, str s);
 char *str_to_buffer(str s, char *buffer, size_t buffer_size);
 int str_find(str string, char c);
 int str_find_str(str string, str query);
+bool str_contains(str string, char c);
+bool str_contains_str(str string, str s);
 bool str_starts_with(str string, char c);
 bool str_starts_with_str(str base, str start);
 bool str_ends_with(str string, char c);
@@ -78,6 +83,7 @@ void str_print_array(str_array);
 
 // helper macros
 str str(char*)
+str_array str_array((str)...)
 char str_at(str, int)
 bool str_empty(str)
 
@@ -86,12 +92,8 @@ str_info(char*, ...)
 str_error(char*, ...) // define STR_COLOR_PRINT to enable printing errors in red 
 ```
 
-### Missing features
+### Upcoming features
 ```c
 str_indices str_find_all(str string, char c);
 str_indices str_find_all_str(str string, str s);
-bool str_contains(str string, char c);
-bool str_contains_str(str string, str s);
-StrAlloc str str_join(str_array strings, char delimiter, Allocator alloc);
-StrAlloc str str_join_str(str_array strings, str delimiter, Allocator alloc);
 ```
