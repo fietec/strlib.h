@@ -33,7 +33,6 @@
 #endif // STR_COLOR_PRINT
 
 #define str_assert(state, msg, ...) do{if (!(state)) {str_error(msg, ##__VA_ARGS__); exit(1);}} while (0)
-	
 #define str__assert_alloc(value) str_assert((value)!=NULL, "Out of memory!")
 #define str__assert_allocator(alloc) str_assert((alloc) != NULL, "Allocator may not be NULL!")
 #define str__assert_deallocator(dealloc) str_assert((dealloc) != NULL, "Deallocator may not be NULL!")
@@ -58,7 +57,10 @@ size_t strlib_len(char *s);
 char* strlib_ncpy(char *s, size_t n, char *d);
 char* strlib_dup(char *s, Allocator alloc);
 void strlib_memset(char *d, char v, size_t n);
+char* strlib_to_upper(char *s);
+char* strlib_to_lower(char *s);
 
+// functions using dynamic memory allocation
 StrAlloc str str_new(char *s, Allocator alloc);
 StrAlloc str str_dup(str string, Allocator alloc);
 StrAlloc str str_sub(str string, size_t from, size_t to, Allocator alloc);
@@ -72,6 +74,24 @@ StrAlloc str str_replace_str(str string, str a, str b, Allocator alloc);
 StrAlloc str str_remove(str string, char c, Allocator alloc);
 StrAlloc str str_remove_str(str string, str s, Allocator alloc);
 StrAlloc str str_insert(str string, str s, size_t index, Allocator alloc);
+StrAlloc str str_to_upper(str string, Allocator alloc);
+StrAlloc str str_to_lower(str string, Allocator alloc);
+StrAlloc str str_reverse(str string, Allocator alloc);
+StrAlloc str str_trim_left(str string, char c, Allocator alloc);
+StrAlloc str str_trim_left_str(str string, str s, Allocator alloc);
+StrAlloc str str_trim_right(str string, char c, Allocator alloc);
+StrAlloc str str_trim_right_str(str string, str s, Allocator alloc);
+StrAlloc str str_trim(str string, char c, Allocator alloc);
+StrAlloc str str_trim_str(str string, str s, Allocator alloc);
+
+// functions that modify a string's content, return the given string pointer
+StrMod str* str_to_upper_mod(str *string);
+StrMod str* str_to_lower_mod(str *string);
+StrMod str* str_replace_mod(str *string, char a, char b);
+StrMod str* str_replace_str_mod(str *string, str a, str b);
+StrMod str* str_remove_mod(str *string, char c);
+StrMod str* str_remove_str_mod(str *string, str s);
+
 char *str_to_buffer(str s, char *buffer, size_t buffer_size);
 int str_find(str string, char c);
 int str_find_str(str string, str query);
@@ -79,7 +99,7 @@ bool str_starts_with(str string, char c);
 bool str_starts_with_str(str base, str start);
 bool str_ends_with(str string, char c);
 bool str_ends_with_str(str base, str end);
-size_t str__hash(str s);
+size_t str_hash(str s);
 bool str_equals(str a, str b);
 bool str_equals_hashed(str a, str b);
 str str_from(str string, size_t from);
@@ -91,11 +111,6 @@ size_t str_count_str(str string, str s);
 void str_free(str string, Deallocator dealloc);
 void str_free_pair(str_pair pair, Deallocator dealloc);
 void str_free_array(str_array array, Deallocator dealloc);
-
-StrMod void str_replace_mod(str *string, char a, char b);
-StrMod void str_replace_str_mod(str *string, str a, str b);
-StrMod void str_remove_mod(str *string, char c);
-StrMod void str_remove_str_mod(str *string, str s);
 
 void str_print_array(str_array arr);
 
@@ -110,7 +125,6 @@ void* str__alloc(Allocator alloc, size_t n);
 
 #endif // _STRLIB_H
 
-// strlib.c
 #ifdef STRLIB_IMPLEMENTATION
 
 size_t strlib_len(char *s)
@@ -150,6 +164,30 @@ char* strlib_dup(char *s, Allocator alloc)
 	return string;
 }
 
+char* strlib_to_lower(char *s)
+{
+    if (s == NULL) return NULL;
+    char c;
+    char *rw = s;
+    while ((c=*rw) != '\0'){
+        if (0x40 < c && c < 0x5b) *rw = c | 0x20;
+        rw++;
+    }
+    return s;
+}
+
+char* strlib_to_upper(char *s)
+{
+    if (s == NULL) return NULL;
+    char c;
+    char *rw = s;
+    while ((c=*rw) != '\0'){
+        if (0x60 < c && c < 0x7b) *rw = c & 0xDF;
+        rw++;
+    }
+    return s;
+}
+
 str str_new(char *s, Allocator alloc)
 {
 	str__assert_allocator(alloc);
@@ -165,8 +203,7 @@ str str_dup(str string, Allocator alloc)
 char* str_to_buffer(str s, char *buffer, size_t buffer_size)
 {
 	if (buffer == NULL || s.len >= buffer_size) return NULL;
-	strlib_ncpy(s.value, s.len, buffer);
-	return buffer + s.len;
+	return strlib_ncpy(s.value, s.len, buffer);
 }
 
 str str__concat(Allocator alloc, int n, ...)
@@ -327,7 +364,7 @@ bool str_ends_with(str string, char c)
     return *(string.value+string.len-1) == c;
 }
 
-size_t str__hash(str s)
+size_t str_hash(str s)
 {
 	size_t hash = 5381; 
     for (size_t i = 0; i < s.len; ++i) {
@@ -339,7 +376,7 @@ size_t str__hash(str s)
 bool str_equals_hashed(str a, str b)
 {
 	if (a.len != b.len) return false;
-	if (str__hash(a) != str__hash(b)) return false;
+	if (str_hash(a) != str_hash(b)) return false;
 	char *pa = a.value;
 	char *pb = b.value;
 	while (a.len-- > 0){
@@ -392,24 +429,27 @@ size_t str_count_str(str string, str s)
 	return count;
 }
 
-void str_replace_mod(str *string, char a, char b)
+str* str_replace_mod(str *string, char a, char b)
 {
+    if (string == NULL) return NULL;
 	char *p;
 	for (size_t i=0; i<string->len; ++i){
 		p = string->value + i;
 		if (*p == a) *p=b;
 	}
+    return string;
 }
 
-void str_replace_str_mod(str *string, str a, str b)
+str* str_replace_str_mod(str *string, str a, str b)
 {
+    if (string == NULL) return NULL;
 	if (b.len > a.len){
 		str_error("cannot replace string of length %u with string of length %u!", a.len, b.len);
-		return;
+		return string;
 	}
 	size_t count = str_count_str(*string, a);
 	size_t length = string->len + count*(b.len-a.len);
-	if (count == 0) return;
+	if (count == 0) return string;
 	char *r = string->value;
 	char *w = r;
 	for (size_t i=0; i<count; ++i){
@@ -425,6 +465,7 @@ void str_replace_str_mod(str *string, str a, str b)
 	}
 	*w = '\0';
     string->len = w-string->value-1;
+    return string;
 }
 
 str str_replace(str string, char a, char b, Allocator alloc)
@@ -509,9 +550,10 @@ str str_remove_str(str string, str s, Allocator alloc)
 	return (str) {.value=value, .len=length};
 }
 
-void str_remove_mod(str *string, char c)
+str* str_remove_mod(str *string, char c)
 {
-    if (string->value == NULL) return;
+    if (string == NULL) return NULL;
+    if (string->value == NULL) return string;
     char *r = string->value;
     char *w = r;
     while (r-string->value <= string->len){
@@ -524,11 +566,13 @@ void str_remove_mod(str *string, char c)
         string->len --;
         *w++ = '\0';
     }
+    return string;
 }
 
-void str_remove_str_mod(str *string, str s)
+str* str_remove_str_mod(str *string, str s)
 {
-    if (string->value == NULL || s.value == NULL, s.len > string->len) return;
+    if (string == NULL) return NULL;
+    if (string->value == NULL || s.value == NULL, s.len > string->len) return string;
     char *r = string->value;
     char *w = r;
     while (r-string->value <= string->len){
@@ -543,6 +587,7 @@ void str_remove_str_mod(str *string, str s)
         string->len --;
         *w++ = '\0';
     }
+    return string;
 }
 
 str str_insert(str string, str s, size_t index, Allocator alloc)
@@ -556,6 +601,148 @@ str str_insert(str string, str s, size_t index, Allocator alloc)
 	w = strlib_ncpy(string.value+index, string.len-index, w);
 	*w = '\0';
 	return (str) {.value=value, .len=length};
+}
+
+str str_reverse(str string, Allocator alloc)
+{
+    str__assert_allocator(alloc);
+    if (string.len <= 1) return str_dup(string, alloc); 
+    char *value = strlib_dup(string.value, alloc);
+    char *r1 = value;
+    char *r2 = value+string.len-1;
+    char c;
+    while (r1 <= r2){
+        c = *r1;
+        *r1++ = *r2;
+        *r2-- = c;
+    }
+    return (str){.value=value, .len=string.len};
+}
+
+str str_to_upper(str string, Allocator alloc)
+{
+    str__assert_allocator(alloc);
+    if (string.value == NULL || string.len == 0) return str_dup(string, alloc);
+    char *value = strlib_dup(string.value, alloc);
+    return (str) {.value=strlib_to_upper(value), .len=string.len};
+}
+
+str str_to_lower(str string, Allocator alloc)
+{
+    str__assert_allocator(alloc);
+    if (string.value == NULL || string.len == 0) return str_dup(string, alloc);
+    char *value = strlib_dup(string.value, alloc);
+    return (str) {.value=strlib_to_lower(value), .len=string.len};  
+}
+
+str* str_to_upper_mod(str *string)
+{
+    if (string == NULL) return NULL;
+    if (string->value == NULL || string->len == 0) return string;
+    strlib_to_upper(string->value);
+    return string;
+}
+
+str* str_to_lower_mod(str *string)
+{
+    if (string == NULL) return NULL;
+    if (string->value == NULL || string->len == 0) return string;
+    strlib_to_lower(string->value);
+    return string;
+}
+
+str str_trim_left(str string, char c, Allocator alloc)
+{
+    str__assert_allocator(alloc);
+    if (string.value == NULL) return (str) {0};
+    if (string.len == 0) return str_new("", alloc);
+    char *r = string.value;
+    while (*r == c){r++;}
+    size_t length = string.value + string.len - r;
+    if (length == 0) return str_new("", alloc);
+    char *value = str__alloc(alloc, length+1);
+    strlib_ncpy(r, length, value);
+    return (str) {.value=value, .len=length};
+}
+
+str str_trim_left_str(str string, str s, Allocator alloc)
+{
+    str__assert_allocator(alloc);
+    if (string.value == NULL) return (str) {0};
+    if (s.len > string.len) return str_new("", alloc);
+    char *r = string.value;
+    while (str_starts_with_str(str(r), s)) r += s.len;
+    size_t length = string.value + string.len - r;
+    if (length == 0) return str_new("", alloc);
+    char *value = str__alloc(alloc, length+1);
+    strlib_ncpy(r, length, value);
+    return (str) {.value=value, .len=length};
+}
+
+str str_trim_right(str string, char c, Allocator alloc)
+{
+    str__assert_allocator(alloc);
+    if (string.value == NULL) return (str) {0};
+    if (string.len == 0) return str_new("", alloc);
+    char *r = string.value + string.len - 1;
+    while (*r == c && r>=string.value) {r--;}
+    size_t length = r-string.value+1;
+    if (length == 0) return str_new("", alloc);
+    char *value = str__alloc(alloc, length+1);
+    strlib_ncpy(string.value, length, value);
+    return (str) {.value=value, .len=length};
+}
+
+str str_trim_right_str(str string, str s, Allocator alloc)
+{
+    str__assert_allocator(alloc);
+    if (string.value == NULL) return (str) {0};
+    if (s.len > string.len) return str_new("", alloc);
+    char *r = string.value + string.len - s.len;
+    while (r >= string.value && str_starts_with_str(str(r), s)) {r -= s.len;}
+    size_t length = r-string.value+2;
+    if (length == 0) return str_new("", alloc);
+    char *value = str__alloc(alloc, length+1);
+    strlib_ncpy(string.value, length, value);
+    return (str) {.value=value, .len=length};
+}
+
+str str_trim(str string, char c, Allocator alloc)
+{
+    str__assert_allocator(alloc);
+    if (string.value == NULL) return (str) {0};
+    if (string.len == 0) return str_new("", alloc);
+    char *r1 = string.value;
+    char *r2 = r1 + string.len - 1;
+    while (r1 <= r2 && (*r1 == c || *r2 == c)) {
+        if (*r1 == c) r1++;
+        if (*r2 == c) r2--;
+    }
+    int length = r2-r1+1;
+    if (length <= 0) return str_new("", alloc);
+    char *value = str__alloc(alloc, length+1);
+    strlib_ncpy(r1, length, value);
+    return (str) {.value=value, .len=length};
+}
+
+str str_trim_str(str string, str s, Allocator alloc)
+{
+    str__assert_allocator(alloc);
+    if (string.value == NULL) return (str) {0};
+    if (string.len == 0 || s.len > string.len) return str_new("", alloc);
+    char *r1 = string.value;
+    char *r2 = string.value + string.len - s.len;
+    bool f1 = false;
+    bool f2 = false;
+    while (r1 <= r2 && ((f1 = str_starts_with_str(str(r1), s)) || (f2 = str_starts_with_str(str(r2), s)))){
+        if (f1) r1 += s.len;
+        if (f2) r2 -= s.len;
+    }
+    int length = r2-r1+2;
+    if (length <= 0) return str_new("", alloc);
+    char *value = str__alloc(alloc, length+1);
+    strlib_ncpy(r1, length, value);
+    return (str) {.value=value, .len=length};
 }
 
 void str_print_array(str_array arr)
